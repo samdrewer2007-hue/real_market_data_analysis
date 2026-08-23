@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-asset = 'AAPL'
+asset = 'JPM' # desired asset symbol
 
 df = pd.read_csv("data/" + asset + "_daily_data.csv", index_col=0, parse_dates=True)
 
@@ -49,5 +49,6 @@ lineplot(4, df.index, cumulative_returns, 'Date', 'Cumulative Returns', asset + 
 lineplot(5, df.index, log_returns, 'Date', 'Log Returns', asset + ' Log Returns')
 
 plt.tight_layout()
+plt.savefig('single asset analysis/' + asset + '_analysis.png')
 plt.show()
 
