@@ -13,14 +13,14 @@ df = pd.read_csv("data/" + asset + "_daily_data.csv", index_col=0, parse_dates=T
 daily_returns = df['4. close'].pct_change()
 annualised_mean_return = daily_returns.mean() * 252
 annualised_std_return = daily_returns.std() * 252**0.5
-print(f"Annualised Mean Return: {annualised_mean_return:.2%}")
-print(f"Annualised Standard Deviation of Return: {annualised_std_return:.2%}")
+print(f"{asset} Annualised Mean Return: {annualised_mean_return:.2%}")
+print(f"{asset} Annualised Standard Deviation of returns: {annualised_std_return:.2%}")
 
 rolling_volatility = daily_returns.rolling(window=20).std() * (252**0.5)
 
 drawdown = (df['4. close'] / df['4. close'].cummax()) - 1
 max_drawdown = drawdown.min()
-print(f"Maximum Drawdown: {max_drawdown:.2%}")  
+print(f"{asset} Maximum Drawdown: {max_drawdown:.2%}")  
 
 cumulative_returns = (1 + daily_returns).cumprod() - 1
 
@@ -49,6 +49,6 @@ lineplot(4, df.index, cumulative_returns, 'Date', 'Cumulative Returns', asset + 
 lineplot(5, df.index, log_returns, 'Date', 'Log Returns', asset + ' Log Returns')
 
 plt.tight_layout()
-plt.savefig('single asset analysis/' + asset + '_analysis.png')
+plt.savefig('analysis plots/' + asset + '_analysis.png')
 plt.show()
 

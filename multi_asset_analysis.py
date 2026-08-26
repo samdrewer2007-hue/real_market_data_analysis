@@ -1,59 +1,50 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 
+assets = ['AAPL', 'GLD', 'JPM', 'SPY', 'XOM'] # desired asset symbols
 
-df_AAPL = pd.read_csv("data/AAPL_daily_data.csv", index_col=0, parse_dates=True)
-df_GLD = pd.read_csv("data/GLD_daily_data.csv", index_col=0, parse_dates=True)
-df_JPM = pd.read_csv("data/JPM_daily_data.csv",index_col=0, parse_dates=True)
-df_SPY = pd.read_csv("data/SPY_daily_data.csv", index_col=0, parse_dates=True)
-df_XOM = pd.read_csv("data/XOM_daily_data.csv", index_col=0, parse_dates=True)
+dataframes = {}
+for asset in assets:
+    dataframes[asset] = pd.read_csv(f'data/{asset}_daily_data.csv', index_col=0, parse_dates=True)
+    dataframes[asset] = dataframes[asset].drop(columns=['1. open', '2. high', '3. low', '5. volume'])
 
-df_AAPL = df_AAPL.drop(columns=['1. open', '2. high', '3. low', '5. volume'])
-df_GLD = df_GLD.drop(columns=['1. open', '2. high', '3. low', '5. volume'])
-df_JPM = df_JPM.drop(columns=['1. open', '2. high', '3. low', '5. volume'])
-df_SPY = df_SPY.drop(columns=['1. open', '2. high', '3. low', '5. volume'])
-df_XOM = df_XOM.drop(columns=['1. open', '2. high', '3. low', '5. volume'])
+df_all = pd.concat(dataframes.values(), axis=1, keys=dataframes.keys())
 
-df_all = pd.concat([df_AAPL, df_GLD, df_JPM, df_SPY, df_XOM], axis=1, keys=['AAPL', 'GLD', 'JPM', 'SPY', 'XOM'])
 df_all.columns = df_all.columns.get_level_values(0)
 
 
 
 def individual_info(prices, returns, asset):
     annualised_mean_return = returns[asset].mean() * 252
-    annualised_volatlilty = returns[asset].std() * 252**0.5
+    annualised_volatility = returns[asset].std() * 252**0.5
     drawdown_max = ((prices[asset] / prices[asset].cummax()) - 1).min()
-    return annualised_mean_return, annualised_volatlilty, drawdown_max
+    return annualised_mean_return, annualised_volatility, drawdown_max
 
 
 
-daily_returns = df_all.pct_change()
-daily_returns = daily_returns.dropna()
-print(daily_returns.head())
+daily_returns = df_all.pct_change().dropna()
+
 
 analysis = {}
 
 for asset in df_all.columns:
     analysis[asset] = individual_info(df_all, daily_returns, asset)
 
-for asset in df_all.columns:
-    print(f'Annualised mean return for {asset}: {analysis[asset][0]:.2%}')
-    print(f'Annualised volatility for {asset}: {analysis[asset][1]:.2%}')
-    print(f'Max drawdown for {asset}: {analysis[asset][2]:.2%}')
-    print('-----------------------------')
+results = pd.DataFrame.from_dict(analysis, orient='index', columns=['Annualised Mean Return', 'Annualised Volatility', 'Max Drawdown'])
+print(f'Analysis Results:\n{results}\n')
+
 
 correlation_matrix = daily_returns.corr()
-print(correlation_matrix)
+print(f'Correlation Matrix:\n{correlation_matrix}\n')
 
-covariance_matrix = daily_returns.cov()
-print(covariance_matrix)
+covariance_matrix = daily_returns.cov()*252
+print(f'Yearly Covariance Matrix:\n{covariance_matrix}\n')
 
 normalised_prices = df_all / df_all.iloc[0]
 
+rolling_volatility = daily_returns.rolling(window=20).std() * (252**0.5)
 
-
-fig, axs = plt.subplots(2, 1, figsize=(12, 6))
+fig, axs = plt.subplots(3, 1, figsize=(12, 6))
 
 for asset in normalised_prices.columns:
     axs[0].plot(normalised_prices.index, normalised_prices[asset], label=asset)
@@ -72,6 +63,14 @@ axs[1].legend()
 axs[1].set_xlim(0, daily_returns.std().max() * 252**0.5 + 0.05)
 axs[1].set_ylim(daily_returns.mean().min() * 252 - 0.05, daily_returns.mean().max() * 252 + 0.05)
 
+for asset in rolling_volatility.columns:
+    axs[2].plot(rolling_volatility.index, rolling_volatility[asset], label = asset)
+axs[2].set_xlabel('Date')
+axs[2].set_ylabel('Rolling Volatility')
+axs[2].set_title('Rolling Volatility Analysis')
+axs[2].legend(loc='best')
+axs[2].set_xlim(rolling_volatility.index[20], rolling_volatility.index[-1])
+
 plt.tight_layout()
-plt.savefig('multi_asset_price_analysis.png', dpi=300)
+plt.savefig('analysis plots/multi_asset_analysis.png', dpi=300)
 plt.show()
