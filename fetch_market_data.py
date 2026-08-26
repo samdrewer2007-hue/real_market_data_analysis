@@ -28,4 +28,4 @@ df = df.apply(pd.to_numeric, errors='coerce')
 df = df.sort_index(ascending=True)
 df.to_csv('GLD_daily_data.csv')
 
-#export ALPHA_VANTAGE_API_KEY="your_actual_key_here" before all runs
+#export ALPHAVANTAGE_API_KEY="your_actual_key_here" before all runs
